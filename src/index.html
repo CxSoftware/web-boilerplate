@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>My Website</title>
+	</head>
+	<body>
+		<!-- App -->
+		<div id="app">
+			<approot></approot>
+		</div>
+
+		<!-- External scripts -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.16.0/polyfill.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.3/vue.min.js"></script>
+
+		<!-- Internal scripts -->
+		{{#scripts}}
+		<script src="{{{.}}}"></script>
+		{{/scripts}}
+	</body>
+</html>
