@@ -5,6 +5,7 @@ const gulp = require ('gulp');
 const AWS = require ('aws-sdk');
 const awspublish = require ('gulp-awspublish');
 const browserSync = require ('browser-sync').create ();
+const Bust = require ('gulp-bust');
 const clean = require ('gulp-rimraf');
 const cloudfront = require ('gulp-cloudfront-invalidate-aws-publish');
 const globby = require ('globby');
@@ -25,6 +26,9 @@ const AWS_DISTRIBUTION = null;
 if (!AWS_PROFILE)
 	throw Error ('Configure constants in gulpfile.js!');
 
+// Globals
+const bust = new Bust ();
+
 // Load AWS credentials
 const awsCredentials = new AWS.SharedIniFileCredentials ({
 	profile: AWS_PROFILE});
@@ -32,7 +36,8 @@ const awsCredentials = new AWS.SharedIniFileCredentials ({
 // Config (default: dev)
 const config = {
 	// Options
-	miminizeHtml: false,
+	minimizeHtml: false,
+	minimizeCss: false,
 
 	// Modules
 	webpack: {
@@ -103,8 +108,23 @@ gulp.task ('html', () =>
 		.src ('src/index.html')
 		.pipe (mustache (config.mustache ()));
 
-	const step2 = config.miminizeHtml ?
+	const step2 = config.minimizeHtml ?
 		step1.pipe (htmlmin (config.htmlmin)) :
+		step1;
+	
+	console.log (config.minimizeCss);
+	const step3 = config.minimizeCss ?
+		step2.pipe (bust.references ()) :
+		step2;
+
+	return step3.pipe (gulp.dest ('dist'));
+});
+
+gulp.task ('css', () =>
+{
+	const step1 = gulp.src ('src/**/*.css');
+	const step2 = config.minimizeCss ?
+		step1.pipe (bust.resources ()) :
 		step1;
 
 	return step2.pipe (gulp.dest ('dist'));
@@ -114,12 +134,14 @@ gulp.task ('html', () =>
 gulp.task ('prod', done =>
 {
 	config.miminizeHtml = true;
+	config.minimizeCss = true;
 	config.webpack.plugins = [ new webpack.optimize.UglifyJsPlugin (
 			{ output: { comments: false } }) ];
 
 	runSequence (
 		'clean',
 		'webpack',
+		'css',
 		'html',
 		done);
 });
@@ -147,6 +169,7 @@ gulp.task ('dev', done =>
 	runSequence (
 		'clean',
 		'webpack',
+		'css',
 		'html',
 		done);
 });
